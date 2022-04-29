@@ -4,7 +4,7 @@ inputs:
   project:
     required: true
   summary:
-    default: ${{ github.event.pull_request.title }}
+    required: false
   description:
     default: |
       Please Review ${{ github.event.pull_request.html_url }}
@@ -58,8 +58,12 @@ runs:
       id: jira-info
       run: |
         print('${{ inputs.pull-url }}')
-        if not '${{ inputs.summary }}':
+        summary = '${{ inputs.summary }}'
+        if not summary:
           print('::set-output name=summary::cool')
+        else:
+          print(f'::set-output name=summary::{summary')
+
       shell: python
     - name: Create issue
       id: ticket
