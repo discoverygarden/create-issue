@@ -26,6 +26,18 @@ runs:
         exit 1
       shell: bash
 
+    - name: Get Pull Request Information
+      id: pr-info
+      run: |
+          fields="title,number,url"
+          pull_info=$(gh pr view $PULL --json $fields)
+          echo "::debug::pull_info=$pull_info"
+
+          for field in ${fields//,/ }; do
+            value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
+            echo "::set-output name=$field::$value"
+          done
+
     - name: Login to jira
       uses: atlassian/gajira-login@master
       env:
@@ -50,14 +62,14 @@ runs:
         issue: ${{ steps.ticket.outputs.issue }}
         transition: "To Do"
 
-    # - name: Prepend Ticket ID to Pull Request
-    #   run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
-    #   env:
-    #     PULL: ${{ inputs.pull-url }}
-    #     TICKET: ${{ steps.ticket.outputs.issue }}
-    #     OLD_TITLE: ${{ needs.create_pr.outputs.pull_title }}
-    #     GITHUB_TOKEN: ${{ inputs.github-token }}
-    #   shell: bash
+    - name: Prepend Ticket ID to Pull Request
+      run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
+      env:
+        PULL: ${{ inputs.pull-url }}
+        TICKET: ${{ steps.ticket.outputs.issue }}
+        OLD_TITLE: ${{ steps.pr-info.outputs.title }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
 
     - name: Comment On Pull Request
       run: gh pr comment $PULL --body "$BODY"
