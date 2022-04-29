@@ -19,6 +19,13 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Missing Pull Request
+      if: ${{ inputs.pull-url == '' }}
+      run: |
+        echo "::error:: Missing pull-url: pull-url is required when not running from a pull request "
+        exit 1
+      shell: bash
+
     - name: Login to jira
       uses: atlassian/gajira-login@master
       env:
