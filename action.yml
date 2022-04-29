@@ -43,13 +43,14 @@ runs:
         issue: ${{ steps.ticket.outputs.issue }}
         transition: "To Do"
 
-    - name: Prepend Ticket ID to Pull Request
-      run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
-      env:
-        PULL: ${{ inputs.pull-url }}
-        TICKET: ${{ steps.ticket.outputs.issue }}
-        OLD_TITLE: ${{ needs.create_pr.outputs.pull_title }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+    # - name: Prepend Ticket ID to Pull Request
+    #   run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
+    #   env:
+    #     PULL: ${{ inputs.pull-url }}
+    #     TICKET: ${{ steps.ticket.outputs.issue }}
+    #     OLD_TITLE: ${{ needs.create_pr.outputs.pull_title }}
+    #     GITHUB_TOKEN: ${{ inputs.github-token }}
+    #   shell: bash
 
     - name: Comment On Pull Request
       run: gh pr comment $PULL --body "$BODY"
@@ -58,6 +59,7 @@ runs:
         BODY: >
           Created a jira ticket: [${{ steps.ticket.outputs.issue }}](${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }})
         GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
 
     # - name: Send custom JSON data to Slack workflow
     #   id: slack
