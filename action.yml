@@ -38,6 +38,7 @@ runs:
             echo "::set-output name=$field::$value"
           done
       env:
+        PULL: ${{ inputs.pull-url }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
