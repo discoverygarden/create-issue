@@ -37,6 +37,7 @@ runs:
             value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
             echo "::set-output name=$field::$value"
           done
+      shell: bash
 
     - name: Login to jira
       uses: atlassian/gajira-login@master
