@@ -24,8 +24,6 @@ runs:
       run: |
         echo "::error:: Missing pull-url: pull-url is required when not running from a pull request "
         exit 1
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
     - name: Get Pull Request Information
@@ -39,6 +37,8 @@ runs:
             value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
             echo "::set-output name=$field::$value"
           done
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
     - name: Login to jira
