@@ -7,7 +7,7 @@ inputs:
     default: ${{ github.event.pull_request.title }}
   description:
     default: |
-      Please Review ${{ github.event.pull_request.title }}
+      Please Review ${{ github.event.pull_request.html_url }}
   pull-url:
     default: ${{ github.event.pull_request.html_url }}
   jira-url:
@@ -54,6 +54,13 @@ runs:
         JIRA_USER_EMAIL: ${{ inputs.jira-user }}
         JIRA_API_TOKEN: ${{ inputs.jira-token }}
 
+    - name: Set Jira Info
+      id: jira-info
+      run: |
+        print('${{ inputs.pull-url }}')
+        if not '${{ inputs.summary }}':
+          print('::set-output name=summary::cool')
+      shell: python
     - name: Create issue
       id: ticket
       uses: atlassian/gajira-create@master
