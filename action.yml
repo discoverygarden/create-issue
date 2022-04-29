@@ -3,6 +3,11 @@ description: GitHub action to create Jira issues and send Slack notifications fo
 inputs:
   project:
     required: true
+  summary:
+    default: ${{ github.event.pull_request.title }}
+  description:
+    default: |
+      Please Review ${{ github.event.pull_request.title }}
   pull-url:
     default: ${{ github.event.pull_request.html_url }}
   jira-url:
@@ -55,10 +60,8 @@ runs:
       with:
         project: ${{ inputs.project }}
         issuetype: Task
-        summary: |
-          Config pull request failed
-        description: |
-          A merge conflict was found in the pull request for ${{ inputs.pull-url }}
+        summary: ${{ inputs.summary}}
+        description: ${{ inputs.description}}
 
     - name: Put ticket in todo
       uses: atlassian/gajira-transition@master
