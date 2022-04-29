@@ -62,7 +62,7 @@ runs:
         if not summary:
           print('::set-output name=summary::cool')
         else:
-          print(f'::set-output name=summary::{summary')
+          print(f'::set-output name=summary::{summary}')
 
       shell: python
     - name: Create issue
