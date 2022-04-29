@@ -1,0 +1,75 @@
+name: Create Issue
+description: GitHub action to create Jira issues and send Slack notifications for pull requests.
+inputs:
+  project:
+    required: true
+  pull-url:
+    default: ${{ github.event.pull_request.html_url }}
+  jira-url:
+    required: true
+  jira-user:
+    required: true
+  jira-token:
+    required: true
+  github-token:
+    default: ${{ github.token }}
+  
+  
+
+runs:
+  using: composite
+  steps:
+    - name: Login to jira
+      uses: atlassian/gajira-login@master
+      env:
+        JIRA_BASE_URL: ${{ inputs.jira-url }}
+        JIRA_USER_EMAIL: ${{ inputs.jira-user }}
+        JIRA_API_TOKEN: ${{ inputs.jira-token }}
+
+    - name: Create issue
+      id: ticket
+      uses: atlassian/gajira-create@master
+      with:
+        project: ${{ inputs.project }}
+        issuetype: Task
+        summary: |
+          Config pull request failed
+        description: |
+          A merge conflict was found in the pull request for ${{ inputs.pull-url }}
+
+    - name: Put ticket in todo
+      uses: atlassian/gajira-transition@master
+      with:
+        issue: ${{ steps.ticket.outputs.issue }}
+        transition: "To Do"
+
+    - name: Prepend Ticket ID to Pull Request
+      run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
+      env:
+        PULL: ${{ inputs.pull-url }}
+        TICKET: ${{ steps.ticket.outputs.issue }}
+        OLD_TITLE: ${{ needs.create_pr.outputs.pull_title }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+
+    - name: Comment On Pull Request
+      run: gh pr comment $PULL --body "$BODY"
+      env:
+        PULL: ${{ inputs.pull-url }}
+        BODY: >
+          Created a jira ticket: [${{ steps.ticket.outputs.issue }}](${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }})
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+
+    # - name: Send custom JSON data to Slack workflow
+    #   id: slack
+    #   uses: slackapi/slack-github-action@v1.18.0
+    #   with:
+    #     payload: |
+    #       {
+    #         "ticket_id": "${{ steps.ticket.outputs.issue }}",
+    #         "ticket_url": "${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }}",
+    #         "pull_url": "${{ inputs.pull-url }}",
+    #         "client_id": "${{ inputs.project }}"
+    #       }
+    #   env:
+    #     SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook }}
+
