@@ -71,7 +71,7 @@ runs:
       with:
         project: ${{ inputs.project }}
         issuetype: Task
-        summary: ${{ inputs.summary}}
+        summary: ${{ steps.jira-info.outputs.summary}}
         description: ${{ inputs.description}}
 
     - name: Put ticket in todo
