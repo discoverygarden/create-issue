@@ -6,6 +6,7 @@ inputs:
   summary:
     required: false
   description:
+    required: false
   pull-url:
     default: ${{ github.event.pull_request.html_url }}
   jira-url:
