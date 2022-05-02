@@ -60,7 +60,7 @@ runs:
           if not value:
             value = default
           print(f'::set-output name={name}::{default}')
-        set_input('summary', '${{ inputs.summmary }}', '${{ steps.pr-info.outputs.title }}')
+        set_input('summary', '${{ inputs.summary }}', '${{ steps.pr-info.outputs.title }}')
         set_input('description', '${{ inputs.description }}', f'Please review ${{ inputs.pull-url }}')
       shell: python
 
