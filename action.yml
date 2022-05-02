@@ -6,8 +6,6 @@ inputs:
   summary:
     required: false
   description:
-    default: |
-      Please Review ${{ github.event.pull_request.html_url }}
   pull-url:
     default: ${{ github.event.pull_request.html_url }}
   jira-url:
@@ -57,22 +55,22 @@ runs:
     - name: Set Jira Info
       id: jira-info
       run: |
-        print('${{ inputs.pull-url }}')
-        summary = '${{ inputs.summary }}'
-        if not summary:
-          print('::set-output name=summary::cool')
-        else:
-          print(f'::set-output name=summary::{summary}')
-
+        def set_input(name, value, default):
+          if not value:
+            value = default
+          print(f'::set-output name={name}::{default}')
+        set_input('summary', '${{ inputs.summmary }}', '${{ steps.pr-info.outputs.title }}')
+        set_input('description', '${{ inputs.description }}', f'Please review ${{ inputs.pull-url }}')
       shell: python
+
     - name: Create issue
       id: ticket
       uses: atlassian/gajira-create@master
       with:
         project: ${{ inputs.project }}
         issuetype: Task
-        summary: ${{ steps.jira-info.outputs.summary}}
-        description: ${{ inputs.description}}
+        summary: ${{ steps.jira-info.outputs.summary }}
+        description: ${{ steps.jira-info.outputs.description }}
 
     - name: Put ticket in todo
       uses: atlassian/gajira-transition@master
