@@ -23,6 +23,8 @@ inputs:
     required: true
   github-token:
     default: ${{ github.token }}
+  slack-webhook:
+    required: false
   
   
 
@@ -82,12 +84,12 @@ runs:
         issuetype: Task
         summary: ${{ steps.jira-info.outputs.summary }}
         description: ${{ steps.jira-info.outputs.description }}
-        fields: |
-          {
-            "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
-            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.test-case }}",
-            "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
-          }
+        # fields: |
+        #   {
+        #     "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
+        #     "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.test-case }}",
+        #     "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
+        #   }
 
     - name: Put ticket in todo
       uses: atlassian/gajira-transition@master
@@ -113,17 +115,18 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
-    # - name: Send custom JSON data to Slack workflow
-    #   id: slack
-    #   uses: slackapi/slack-github-action@v1.18.0
-    #   with:
-    #     payload: |
-    #       {
-    #         "ticket_id": "${{ steps.ticket.outputs.issue }}",
-    #         "ticket_url": "${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }}",
-    #         "pull_url": "${{ inputs.pull-url }}",
-    #         "client_id": "${{ inputs.project }}"
-    #       }
-    #   env:
-    #     SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook }}
+    - name: Send custom JSON data to Slack workflow
+      if: ${{ inputs.slack-webhook != '' }}
+      id: slack
+      uses: slackapi/slack-github-action@v1.18.0
+      with:
+        payload: |
+          {
+            "ticket_id": "${{ steps.ticket.outputs.issue }}",
+            "ticket_url": "${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }}",
+            "pull_url": "${{ inputs.pull-url }}",
+            "client_id": "${{ inputs.project }}"
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook }}
 
