@@ -7,6 +7,8 @@ inputs:
     required: false
   description:
     required: false
+  transition:
+    default: To Do
   pull-url:
     default: ${{ github.event.pull_request.html_url }}
   jira-url:
@@ -77,7 +79,7 @@ runs:
       uses: atlassian/gajira-transition@master
       with:
         issue: ${{ steps.ticket.outputs.issue }}
-        transition: "To Do"
+        transition: ${{ inputs.transition }}
 
     - name: Prepend Ticket ID to Pull Request
       run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
