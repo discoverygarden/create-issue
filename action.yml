@@ -64,7 +64,7 @@ runs:
     - name: Set Jira Info
       id: jira-info
       env:
-        symmary: ${{ inputs.summary }}
+        summary: ${{ inputs.summary }}
         description: ${{ inputs.description }}
         pr_title: '${{ steps.pr-info.outputs.title }}'
         pull_url: ${{ inputs.pull-url }}
