@@ -74,12 +74,12 @@ runs:
           if not value:
             value = default
           print(f'::set-output name={name}::{value}')
-        set_input('summary', os.environ['summary'], os.environ['pr_title'])
-        set_input('description', os.environ['description'], f'Please review ${os.environ["pull_url"]}')
+        set_input('summary', os.getenv('summary'), os.getenv('pr_title'))
+        set_input('description', os.getenv('description'), f'Please review ${os.getenv("pull_url")}')
 
-        set_input('test-field', os.environ['JIRA_TEST_CASE_FIELD'], 'customfield_10027')
-        set_input('instructions-field', os.environ['JIRA_DEPLOYMENT_INSTRUCTION_FIELD'], 'customfield_10028')
-        set_input('prs-field', os.environ['JIRA_PRS_FIELD'], 'customfield_10800')
+        set_input('test-field', os.getenv('JIRA_TEST_CASE_FIELD'), 'customfield_10027')
+        set_input('instructions-field', os.getenv('JIRA_DEPLOYMENT_INSTRUCTION_FIELD'), 'customfield_10028')
+        set_input('prs-field', os.getenv('JIRA_PRS_FIELD'), 'customfield_10800')
       shell: python
 
     - name: Create issue
