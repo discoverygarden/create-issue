@@ -69,7 +69,7 @@ runs:
         pr_title: '${{ steps.pr-info.outputs.title }}'
         pull_url: ${{ inputs.pull-url }}
       run: |
-        inport os
+        import os
         def set_input(name, value, default):
           if not value:
             value = default
