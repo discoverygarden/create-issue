@@ -69,12 +69,13 @@ runs:
         pr_title: '${{ steps.pr-info.outputs.title }}'
         pull_url: ${{ inputs.pull-url }}
       run: |
+        inport os
         def set_input(name, value, default):
           if not value:
             value = default
           print(f'::set-output name={name}::{value}')
         set_input('summary', os.environ['summary'], os.environ['pr_title'])
-        set_input('description', os.environ['description'], f'Please review ${os.environ['pull_url']}')
+        set_input('description', os.environ['description'], f'Please review ${os.environ["pull_url"]}')
 
         set_input('test-field', os.environ['JIRA_TEST_CASE_FIELD'], 'customfield_10027')
         set_input('instructions-field', os.environ['JIRA_DEPLOYMENT_INSTRUCTION_FIELD'], 'customfield_10028')
