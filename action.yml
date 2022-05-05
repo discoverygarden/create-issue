@@ -2,28 +2,40 @@ name: Create Issue
 description: GitHub action to create Jira issues and send Slack notifications for pull requests.
 inputs:
   project:
+    description: The Jira project to add the issue to.
     required: true
   summary:
+    description: The summary of the isssue.
     required: false
   description:
+    description: A description of the isssue.
     required: false
   transition:
+    description: Transtion to apply to the issue.
     default: To Do
   test-case:
+    description: Instructions on how to test the issue.
     default: Standard smoke test.
   deployment-instructions:
+    description: Instructions on how to deploy the issue.
     default: Unknown
   pull-url:
+    description: The URL of the pull request to create the issue about.
     default: ${{ github.event.pull_request.html_url }}
   jira-url:
+    description: Base URL the Jira instance.
     required: true
   jira-user:
+    description: Email of the Jira API user.
     required: true
   jira-token:
+    description: API token of the Jira API user.
     required: true
   github-token:
+    description: GitHub access token
     default: ${{ github.token }}
   slack-webhook:
+    description: Optional Slack webhook URL to receive notifications.
     required: false
   
   
