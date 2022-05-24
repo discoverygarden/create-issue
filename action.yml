@@ -1,0 +1,150 @@
+name: Create Issue
+description: GitHub action to create Jira issues and send Slack notifications for pull requests.
+inputs:
+  project:
+    description: The Jira project to add the issue to.
+    required: true
+  summary:
+    description: The summary of the isssue.
+    required: false
+  description:
+    description: A description of the isssue.
+    required: false
+  transition:
+    description: Transtion to apply to the issue.
+    default: To Do
+  test-case:
+    description: Instructions on how to test the issue.
+    default: Standard smoke test.
+  deployment-instructions:
+    description: Instructions on how to deploy the issue.
+    default: Unknown
+  pull-url:
+    description: The URL of the pull request to create the issue about.
+    default: ${{ github.event.pull_request.html_url }}
+  jira-url:
+    description: Base URL the Jira instance.
+    required: true
+  jira-user:
+    description: Email of the Jira API user.
+    required: true
+  jira-token:
+    description: API token of the Jira API user.
+    required: true
+  github-token:
+    description: GitHub access token
+    default: ${{ github.token }}
+  slack-webhook:
+    description: Optional Slack webhook URL to receive notifications.
+    required: false
+  
+  
+
+runs:
+  using: composite
+  steps:
+    - name: Missing Pull Request
+      if: ${{ inputs.pull-url == '' }}
+      run: |
+        echo "::error:: Missing pull-url: pull-url is required when not running from a pull request "
+        exit 1
+      shell: bash
+
+    - name: Get Pull Request Information
+      id: pr-info
+      run: |
+          fields="title,number,url"
+          pull_info=$(gh pr view $PULL --json $fields)
+          echo "::debug::pull_info=$pull_info"
+
+          for field in ${fields//,/ }; do
+            value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
+            echo "::set-output name=$field::$value"
+          done
+      env:
+        PULL: ${{ inputs.pull-url }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
+
+    - name: Login to jira
+      uses: atlassian/gajira-login@master
+      env:
+        JIRA_BASE_URL: ${{ inputs.jira-url }}
+        JIRA_USER_EMAIL: ${{ inputs.jira-user }}
+        JIRA_API_TOKEN: ${{ inputs.jira-token }}
+
+    - name: Set Jira Info
+      id: jira-info
+      env:
+        summary: ${{ inputs.summary }}
+        description: ${{ inputs.description }}
+        pr_title: '${{ steps.pr-info.outputs.title }}'
+        pull_url: ${{ inputs.pull-url }}
+      run: |
+        import os
+        def set_input(name, value, default):
+          if not value:
+            value = default
+          print(f'::set-output name={name}::{value}')
+        set_input('summary', os.getenv('summary'), os.getenv('pr_title'))
+        set_input('description', os.getenv('description'), f'Please review ${os.getenv("pull_url")}')
+
+        set_input('test-field', os.getenv('JIRA_TEST_CASE_FIELD'), 'customfield_10027')
+        set_input('instructions-field', os.getenv('JIRA_DEPLOYMENT_INSTRUCTION_FIELD'), 'customfield_10028')
+        set_input('prs-field', os.getenv('JIRA_PRS_FIELD'), 'customfield_10800')
+      shell: python
+
+    - name: Create issue
+      id: ticket
+      uses: atlassian/gajira-create@master
+      with:
+        project: ${{ inputs.project }}
+        issuetype: Task
+        summary: ${{ steps.jira-info.outputs.summary }}
+        description: ${{ steps.jira-info.outputs.description }}
+        fields: |
+          {
+            "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
+          }
+
+    - name: Put ticket in todo
+      uses: atlassian/gajira-transition@master
+      with:
+        issue: ${{ steps.ticket.outputs.issue }}
+        transition: ${{ inputs.transition }}
+
+    - name: Prepend Ticket ID to Pull Request
+      run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
+      env:
+        PULL: ${{ inputs.pull-url }}
+        TICKET: ${{ steps.ticket.outputs.issue }}
+        OLD_TITLE: ${{ steps.pr-info.outputs.title }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
+
+    - name: Comment On Pull Request
+      run: gh pr comment $PULL --body "$BODY"
+      env:
+        PULL: ${{ inputs.pull-url }}
+        BODY: >
+          Created a jira ticket: [${{ steps.ticket.outputs.issue }}](${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }})
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
+
+    - name: Send custom JSON data to Slack workflow
+      if: ${{ inputs.slack-webhook != '' }}
+      id: slack
+      uses: slackapi/slack-github-action@v1.18.0
+      with:
+        payload: |
+          {
+            "ticket_id": "${{ steps.ticket.outputs.issue }}",
+            "ticket_url": "${{ inputs.jira-url }}/browse/${{ steps.ticket.outputs.issue }}",
+            "pull_url": "${{ inputs.pull-url }}",
+            "client_id": "${{ inputs.project }}"
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook }}
+
