@@ -105,7 +105,7 @@ runs:
         fields: |
           {
             "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
-            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.deployment-instructions }}",
             "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
           }
 
