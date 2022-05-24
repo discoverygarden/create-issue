@@ -102,12 +102,12 @@ runs:
         issuetype: Task
         summary: ${{ steps.jira-info.outputs.summary }}
         description: ${{ steps.jira-info.outputs.description }}
-        # fields: |
-        #   {
-        #     "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
-        #     "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.test-case }}",
-        #     "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
-        #   }
+        fields: |
+          {
+            "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
+          }
 
     - name: Put ticket in todo
       uses: atlassian/gajira-transition@master
