@@ -91,7 +91,6 @@ runs:
 
         set_input('test-field', os.getenv('JIRA_TEST_CASE_FIELD'), 'customfield_10027')
         set_input('instructions-field', os.getenv('JIRA_DEPLOYMENT_INSTRUCTION_FIELD'), 'customfield_10028')
-        set_input('prs-field', os.getenv('JIRA_PRS_FIELD'), 'customfield_10800')
       shell: python
 
     - name: Create issue
@@ -106,7 +105,6 @@ runs:
           {
             "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
             "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.deployment-instructions }}",
-            "${{ steps.jira-info.outputs.prs-field }}": "${{ inputs.pull-url }}"
           }
 
     - name: Put ticket in todo
