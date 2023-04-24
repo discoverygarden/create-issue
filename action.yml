@@ -37,8 +37,6 @@ inputs:
   slack-webhook:
     description: Optional Slack webhook URL to receive notifications.
     required: false
-  
-  
 
 runs:
   using: composite
@@ -59,7 +57,7 @@ runs:
 
           for field in ${fields//,/ }; do
             value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
-            echo "::set-output name=$field::$value"
+            echo "name=$field::$value" >> $GITHUB_OUTPUT
           done
       env:
         PULL: ${{ inputs.pull-url }}
@@ -85,7 +83,7 @@ runs:
         def set_input(name, value, default):
           if not value:
             value = default
-          print(f'::set-output name={name}::{value}')
+          print(f'`name={name}::{value}` >> $GITHUB_OUTPUT')
         set_input('summary', os.getenv('summary'), os.getenv('pr_title'))
         set_input('description', os.getenv('description'), f'Please review ${os.getenv("pull_url")}')
 
@@ -145,4 +143,3 @@ runs:
           }
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook }}
-
