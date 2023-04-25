@@ -79,17 +79,11 @@ runs:
         pr_title: '${{ steps.pr-info.outputs.title }}'
         pull_url: ${{ inputs.pull-url }}
       run: |
-        import os
-        def set_input(name, value, default):
-          if not value:
-            value = default
-          print(f'`name={name}::{value}` >> $GITHUB_OUTPUT')
-        set_input('summary', os.getenv('summary'), os.getenv('pr_title'))
-        set_input('description', os.getenv('description'), f'Please review ${os.getenv("pull_url")}')
-
-        set_input('test-field', os.getenv('JIRA_TEST_CASE_FIELD'), 'customfield_10027')
-        set_input('instructions-field', os.getenv('JIRA_DEPLOYMENT_INSTRUCTION_FIELD'), 'customfield_10028')
-      shell: python
+        echo "summary::${summary:-$pr_title}" >> $GITHUB_OUTPUT
+        echo "description::${description:-$pr_title}" >> $GITHUB_OUTPUT
+        echo "test-field::${test-field:-$customfield_10027}" >> $GITHUB_OUTPUT
+        echo "instructions-field::${instructions-field:-$customfield_10028}" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Create issue
       id: ticket
@@ -98,7 +92,9 @@ runs:
         project: ${{ inputs.project }}
         issuetype: Task
         summary: ${{ steps.jira-info.outputs.summary }}
-        description: ${{ steps.jira-info.outputs.description }}
+        description: |
+          ${{ steps.jira-info.outputs.description }}
+          ${{ inputs.pull-url }}
         fields: |
           {
             "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
