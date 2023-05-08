@@ -84,8 +84,8 @@ runs:
         echo "description<<EOF" >> $GITHUB_OUTPUT
         echo "${description:-pr_title}" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
-        echo "test-field=${test-field:-customfield_10027}" >> $GITHUB_OUTPUT
-        echo "instructions-field=${instructions-field:-customfield_10028}" >> $GITHUB_OUTPUT
+        echo "test_field=${test_field:-customfield_10027}" >> $GITHUB_OUTPUT
+        echo "instructions_field=${instructions_field:-customfield_10028}" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Create issue
@@ -100,8 +100,8 @@ runs:
           ${{ inputs.pull-url }}
         fields: |
           {
-            "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
-            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.deployment-instructions }}"
+            "${{ steps.jira-info.outputs.test_field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.instructions_field }}": "${{ inputs.deployment-instructions }}"
           }
 
     - name: Put ticket in todo
