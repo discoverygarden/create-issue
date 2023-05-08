@@ -75,7 +75,8 @@ runs:
       id: jira-info
       env:
         summary: '${{ inputs.summary }}'
-        description: "${{ inputs.description }}"
+        description: |
+          "${{ inputs.description }}"
         pr_title: '${{ steps.pr-info.outputs.title }}'
         pull_url: '${{ inputs.pull-url }}'
       run: |
