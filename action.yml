@@ -57,7 +57,7 @@ runs:
 
           for field in ${fields//,/ }; do
             value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
-            echo "name=$field::$value" >> $GITHUB_OUTPUT
+            echo "$field=$value" >> $GITHUB_OUTPUT
           done
       env:
         PULL: ${{ inputs.pull-url }}
@@ -74,10 +74,10 @@ runs:
     - name: Set Jira Info
       id: jira-info
       env:
-        summary: ${{ inputs.summary }}
-        description: ${{ inputs.description }}
+        summary: '${{ inputs.summary }}'
+        description: '${{ inputs.description }}'
         pr_title: '${{ steps.pr-info.outputs.title }}'
-        pull_url: ${{ inputs.pull-url }}
+        pull_url: '${{ inputs.pull-url }}'
       run: |
         echo "summary=${summary:-pr_title}" >> $GITHUB_OUTPUT
         echo "description=${description:-pr_title}" >> $GITHUB_OUTPUT
