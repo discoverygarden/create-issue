@@ -79,8 +79,8 @@ runs:
         pr_title: '${{ steps.pr-info.outputs.title }}'
         pull_url: ${{ inputs.pull-url }}
       run: |
-        echo "summary=${summary:-$pr_title}" >> $GITHUB_OUTPUT
-        echo "description=${description:-$pr_title}" >> $GITHUB_OUTPUT
+        echo "summary=${summary:-pr_title}" >> $GITHUB_OUTPUT
+        echo "description=${description:-pr_title}" >> $GITHUB_OUTPUT
         echo "test-field=${test-field:-customfield_10027}" >> $GITHUB_OUTPUT
         echo "instructions-field=${instructions-field:-customfield_10028}" >> $GITHUB_OUTPUT
       shell: bash
