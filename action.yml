@@ -37,8 +37,6 @@ inputs:
   slack-webhook:
     description: Optional Slack webhook URL to receive notifications.
     required: false
-  
-  
 
 runs:
   using: composite
@@ -59,7 +57,7 @@ runs:
 
           for field in ${fields//,/ }; do
             value=$(jq -r --arg field "$field" '.[$field]' <<< $pull_info)
-            echo "::set-output name=$field::$value"
+            echo "$field=$value" >> $GITHUB_OUTPUT
           done
       env:
         PULL: ${{ inputs.pull-url }}
@@ -76,22 +74,18 @@ runs:
     - name: Set Jira Info
       id: jira-info
       env:
-        summary: ${{ inputs.summary }}
-        description: ${{ inputs.description }}
+        summary: '${{ inputs.summary }}'
+        description: '${{ inputs.description }}'
         pr_title: '${{ steps.pr-info.outputs.title }}'
-        pull_url: ${{ inputs.pull-url }}
+        pull_url: '${{ inputs.pull-url }}'
       run: |
-        import os
-        def set_input(name, value, default):
-          if not value:
-            value = default
-          print(f'::set-output name={name}::{value}')
-        set_input('summary', os.getenv('summary'), os.getenv('pr_title'))
-        set_input('description', os.getenv('description'), f'Please review ${os.getenv("pull_url")}')
-
-        set_input('test-field', os.getenv('JIRA_TEST_CASE_FIELD'), 'customfield_10027')
-        set_input('instructions-field', os.getenv('JIRA_DEPLOYMENT_INSTRUCTION_FIELD'), 'customfield_10028')
-      shell: python
+        echo "summary=${summary:-pr_title}" >> $GITHUB_OUTPUT
+        echo "description<<EOF" >> $GITHUB_OUTPUT
+        echo "${description:-pr_title}" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        echo "test_field=${test_field:-customfield_10027}" >> $GITHUB_OUTPUT
+        echo "instructions_field=${instructions_field:-customfield_10028}" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Create issue
       id: ticket
@@ -100,11 +94,13 @@ runs:
         project: ${{ inputs.project }}
         issuetype: Task
         summary: ${{ steps.jira-info.outputs.summary }}
-        description: ${{ steps.jira-info.outputs.description }}
+        description: |
+          ${{ steps.jira-info.outputs.description }}
+          ${{ inputs.pull-url }}
         fields: |
           {
-            "${{ steps.jira-info.outputs.test-field }}": "${{ inputs.test-case }}",
-            "${{ steps.jira-info.outputs.instructions-field }}": "${{ inputs.deployment-instructions }}"
+            "${{ steps.jira-info.outputs.test_field }}": "${{ inputs.test-case }}",
+            "${{ steps.jira-info.outputs.instructions_field }}": "${{ inputs.deployment-instructions }}"
           }
 
     - name: Put ticket in todo
@@ -145,4 +141,3 @@ runs:
           }
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook }}
-
