@@ -74,6 +74,16 @@ runs:
             exit 0
           fi
 
+          x=1
+          while [ $x -le 20 ]
+          do
+            gh pr view $PULL --json mergeable,mergeStateStatus | jq
+            x=$(( $x + 1 ))
+            sleep 20
+          done
+
+
+
       env:
         PULL: ${{ inputs.pull-url }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
