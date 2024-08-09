@@ -64,6 +64,21 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
+    - name: Check if automerging
+      run: |
+          automerge=$(gh pr view $PULL --json autoMergeRequest)
+          echo "::debug::automerge=$pull_info"
+
+          if jq -e '.autoMergeRequest == null' <<< "$automerge" > /dev/null; then
+            echo Automerge is not enabled
+            exit 0
+          fi
+
+      env:
+        PULL: ${{ inputs.pull-url }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
+
     - name: Login to jira
       uses: atlassian/gajira-login@master
       env:
