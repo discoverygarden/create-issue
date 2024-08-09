@@ -79,7 +79,7 @@ runs:
           do
             gh pr view $PULL --json mergeable,mergeStateStatus | jq
             x=$(( $x + 1 ))
-            sleep 20
+            sleep 1
           done
 
 
