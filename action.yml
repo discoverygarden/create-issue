@@ -76,7 +76,7 @@ runs:
 
           echo Waiting for status checks to complete
           status_checks=$(gh pr view $PULL --json statusCheckRollup)
-          while jq -e '.statusCheckRollup[] | .status == "COMPLETED"' <<< "$status_checks" > /dev/null
+          while ! jq -e '.statusCheckRollup[] | .status == "COMPLETED"' <<< "$status_checks" > /dev/null
           do
             sleep 1
             echo Checking status check again
