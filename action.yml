@@ -79,6 +79,7 @@ runs:
           while jq -e '.statusCheckRollup[] | .status == "COMPLETED"' <<< "$status_checks" > /dev/null
           do
             sleep 1
+            echo Checking status check again
             status_checks=$(gh pr view $PULL --json statusCheckRollup)
           done
 
