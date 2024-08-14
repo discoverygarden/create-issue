@@ -74,13 +74,21 @@ runs:
             exit 0
           fi
 
-          x=1
-          while [ $x -le 20 ]
+          echo Waiting for status checks to complete
+          status_checks=$(gh pr view $PULL --json statusCheckRollup)
+          while jq -e '.statusCheckRollup[] | .status == "COMPLETED"' <<< "$status_checks" > /dev/null
           do
-            gh pr view $PULL --json mergeable,mergeStateStatus | jq
-            x=$(( $x + 1 ))
             sleep 1
+            status_checks=$(gh pr view $PULL --json statusCheckRollup)
           done
+
+          echo Checking if pr is mergable
+          merge_state_status=$(pr view $PULL --json mergeStateStatus)
+          if jq -e '.mergeStateStatus != "BLOCKED"' <<< "$merge_state_status" > /dev/null; then
+            echo PR will be automerged
+            exit 0
+          fi
+          echo PR is unmergeable, a ticket will be created
 
 
 
