@@ -97,7 +97,7 @@ runs:
           done
 
           echo Checking if pr is mergable
-          merge_state_status=$(pr view $PULL --json mergeStateStatus)
+          merge_state_status=$(gh pr view $PULL --json mergeStateStatus)
           if jq -e '.mergeStateStatus != "BLOCKED"' <<< "$merge_state_status" > /dev/null; then
             echo PR will be automerged
             exit 0
