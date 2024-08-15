@@ -65,12 +65,14 @@ runs:
       shell: bash
 
     - name: Check if automerging
+      id: automerge
       run: |
           automerge=$(gh pr view $PULL --json autoMergeRequest)
           echo "::debug::automerge=$pull_info"
 
           if jq -e '.autoMergeRequest == null' <<< "$automerge" > /dev/null; then
             echo Automerge is not enabled
+            echo "mergable=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -98,20 +100,20 @@ runs:
 
           echo Checking if pr is mergable
           merge_state_status=$(gh pr view $PULL --json mergeStateStatus)
-          if jq -e '.mergeStateStatus != "BLOCKED"' <<< "$merge_state_status" > /dev/null; then
+          if jq -e '[.mergeStateStatus] | inside(["CLEAN", "UNSTABLE"])' <<< "$merge_state_status" > /dev/null; then
             echo PR will be automerged
+            echo "mergable=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo PR is unmergeable, a ticket will be created
-
-
-
+          echo "mergable=false" >> "$GITHUB_OUTPUT"
       env:
         PULL: ${{ inputs.pull-url }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
     - name: Login to jira
+      if: ${{ ! steps.automerge.outputs.mergable }}
       uses: atlassian/gajira-login@master
       env:
         JIRA_BASE_URL: ${{ inputs.jira-url }}
@@ -119,6 +121,7 @@ runs:
         JIRA_API_TOKEN: ${{ inputs.jira-token }}
 
     - name: Set Jira Info
+      if: ${{ ! steps.automerge.outputs.mergable }}
       id: jira-info
       env:
         summary: '${{ inputs.summary }}'
@@ -135,6 +138,7 @@ runs:
       shell: bash
 
     - name: Create issue
+      if: ${{ ! steps.automerge.outputs.mergable }}
       id: ticket
       uses: atlassian/gajira-create@master
       with:
@@ -151,12 +155,14 @@ runs:
           }
 
     - name: Put ticket in todo
+      if: ${{ ! steps.automerge.outputs.mergable }}
       uses: atlassian/gajira-transition@master
       with:
         issue: ${{ steps.ticket.outputs.issue }}
         transition: ${{ inputs.transition }}
 
     - name: Prepend Ticket ID to Pull Request
+      if: ${{ ! steps.automerge.outputs.mergable }}
       run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
       env:
         PULL: ${{ inputs.pull-url }}
@@ -166,6 +172,7 @@ runs:
       shell: bash
 
     - name: Comment On Pull Request
+      if: ${{ ! steps.automerge.outputs.mergable }}
       run: gh pr comment $PULL --body "$BODY"
       env:
         PULL: ${{ inputs.pull-url }}
@@ -175,7 +182,7 @@ runs:
       shell: bash
 
     - name: Send custom JSON data to Slack workflow
-      if: ${{ inputs.slack-webhook != '' }}
+      if: ${{ ! steps.automerge.outputs.mergable || inputs.slack-webhook != '' }}
       id: slack
       uses: slackapi/slack-github-action@v1.18.0
       with:
