@@ -182,7 +182,7 @@ runs:
       shell: bash
 
     - name: Send custom JSON data to Slack workflow
-      if: ${{ ! steps.automerge.outputs.mergable || inputs.slack-webhook != '' }}
+      if: ${{ ! steps.automerge.outputs.mergable && inputs.slack-webhook != '' }}
       id: slack
       uses: slackapi/slack-github-action@v1.18.0
       with:
