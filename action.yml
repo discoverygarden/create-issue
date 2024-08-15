@@ -93,6 +93,7 @@ runs:
             sleep 1
             echo Checking status check again
             status_checks=$(gh pr view $PULL --json statusCheckRollup)
+            echo "::debug::checks: $(jq <<<"$status_checks" -c)"
           done
 
           echo Checking if pr is mergable
