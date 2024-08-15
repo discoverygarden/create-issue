@@ -74,9 +74,28 @@ runs:
             exit 0
           fi
 
+          echo Getting list of required status checks
+          rule_sets=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/rules/branches/IT-392-base)
+          checks_from_rulesets=$(jq <<<"$rule_sets" '.[]| select(.type == "required_status_checks").parameters.required_status_checks[] | .context')
+
+          branche_pro=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/branches/${{ github.target }}/protection)
+          checks_from_pro$(jq <<<"$branche_pro" '.required_status_checks.contexts[]')
+
+          required_checks=$(jq -s <<<"checks_from_rulesets" <<<"$checks_from_pro")
+
           echo Waiting for status checks to complete
           status_checks=$(gh pr view $PULL --json statusCheckRollup)
-          while ! jq -e '.statusCheckRollup[] | .status == "COMPLETED"' <<< "$status_checks" > /dev/null
+          while ! jq \
+            -e \
+            --argjson required "$required_checks" \
+            '.statusCheckRollup[] | select( [.name] | inside($required)) | .status == "COMPLETED"' \
+            <<< "$status_checks" > /dev/null
           do
             sleep 1
             echo Checking status check again
