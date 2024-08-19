@@ -128,7 +128,7 @@ runs:
       shell: bash
 
     - name: Login to jira
-      if: ${{ ! steps.automerge.outputs.mergable }}
+      if: ${{ steps.automerge.outputs.mergable == false }}
       uses: atlassian/gajira-login@master
       env:
         JIRA_BASE_URL: ${{ inputs.jira-url }}
@@ -136,7 +136,7 @@ runs:
         JIRA_API_TOKEN: ${{ inputs.jira-token }}
 
     - name: Set Jira Info
-      if: ${{ ! steps.automerge.outputs.mergable }}
+      if: ${{ steps.automerge.outputs.mergable == false }}
       id: jira-info
       env:
         summary: '${{ inputs.summary }}'
@@ -153,7 +153,7 @@ runs:
       shell: bash
 
     - name: Create issue
-      if: ${{ ! steps.automerge.outputs.mergable }}
+      if: ${{ steps.automerge.outputs.mergable == false }}
       id: ticket
       uses: atlassian/gajira-create@master
       with:
@@ -170,14 +170,14 @@ runs:
           }
 
     - name: Put ticket in todo
-      if: ${{ ! steps.automerge.outputs.mergable }}
+      if: ${{ steps.automerge.outputs.mergable == false }}
       uses: atlassian/gajira-transition@master
       with:
         issue: ${{ steps.ticket.outputs.issue }}
         transition: ${{ inputs.transition }}
 
     - name: Prepend Ticket ID to Pull Request
-      if: ${{ ! steps.automerge.outputs.mergable }}
+      if: ${{ steps.automerge.outputs.mergable == false }}
       run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
       env:
         PULL: ${{ inputs.pull-url }}
@@ -187,7 +187,7 @@ runs:
       shell: bash
 
     - name: Comment On Pull Request
-      if: ${{ ! steps.automerge.outputs.mergable }}
+      if: ${{ steps.automerge.outputs.mergable == false }}
       run: gh pr comment $PULL --body "$BODY"
       env:
         PULL: ${{ inputs.pull-url }}
@@ -197,7 +197,7 @@ runs:
       shell: bash
 
     - name: Send custom JSON data to Slack workflow
-      if: ${{ ! steps.automerge.outputs.mergable && inputs.slack-webhook != '' }}
+      if: ${{ steps.automerge.outputs.mergable == false && inputs.slack-webhook != '' }}
       id: slack
       uses: slackapi/slack-github-action@v1.18.0
       with:
