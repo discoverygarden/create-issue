@@ -67,6 +67,10 @@ runs:
     - name: Check if automerging
       id: automerge
       run: |
+          echo Sleeping for 10 seconds before checking if automerge is enabled.
+          sleep 10
+
+          echo Checking if automerge is enabled.
           automerge=$(gh pr view $PULL --json autoMergeRequest)
           echo "::debug::automerge=$pull_info"
 
@@ -86,6 +90,7 @@ runs:
 
           echo Waiting for status checks to complete
           status_checks=$(gh pr view $PULL --json statusCheckRollup)
+          # TODO: limit the number of times the loop runs on an empty list
           while ! jq \
             -e \
             --argjson required "$required_checks" \
