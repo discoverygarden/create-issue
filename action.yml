@@ -96,13 +96,13 @@ runs:
           echo Waiting for status checks to complete
           empty_result_count=0
           status_checks=$(gh pr view $PULL --json statusCheckRollup)
-          while ! filter_results <<< "$status_checks" | jq -e '.[] | .status == "COMPLETED"' > /dev/null
+          while ! filter_results "$status_checks" | jq -e '.[] | .status == "COMPLETED"' > /dev/null
           do
             sleep 1
             echo Checking status check again
             status_checks=$(gh pr view $PULL --json statusCheckRollup)
             echo "::debug::checks: $(jq <<<"$status_checks" -c)"
-            if filter_results <<< "$status_checks" | jq -e 'length == 0' > /dev/null; then
+            if filter_results "$status_checks" | jq -e 'length == 0' > /dev/null; then
               if (( empty_result_count < 60 )); then
                 empty_result_count=$((empty_result_count+1))
                 echo "::debug::No required checks running yet"
