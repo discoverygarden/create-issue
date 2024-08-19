@@ -91,7 +91,7 @@ runs:
           filter_results() {
             jq <<< "$1" \
               --argjson required "$required_checks" \
-              '[.statusCheckRollup[] | select( [.name] | inside($required)]'
+              '[.statusCheckRollup[] | select([.name] | inside($required))]'
           }
           echo Waiting for status checks to complete
           empty_result_count=0
