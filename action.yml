@@ -88,19 +88,29 @@ runs:
           required_checks=$(jq -c <<<"$rule_sets" '[.[]| select(.type == "required_status_checks").parameters.required_status_checks[] | .context]')
           echo "::debug::required status checks : $required_checks"
 
+          filter_results() {
+            jq <<< "$1" \
+              --argjson required "$required_checks" \
+              '[.statusCheckRollup[] | select( [.name] | inside($required)]'
+          }
           echo Waiting for status checks to complete
+          empty_result_count=0
           status_checks=$(gh pr view $PULL --json statusCheckRollup)
-          # TODO: limit the number of times the loop runs on an empty list
-          while ! jq \
-            -e \
-            --argjson required "$required_checks" \
-            '.statusCheckRollup[] | select( [.name] | inside($required)) | .status == "COMPLETED"' \
-            <<< "$status_checks" > /dev/null
+          while ! filter_results <<< "$status_checks" | jq -e '.[] | .status == "COMPLETED"' > /dev/null
           do
             sleep 1
             echo Checking status check again
             status_checks=$(gh pr view $PULL --json statusCheckRollup)
             echo "::debug::checks: $(jq <<<"$status_checks" -c)"
+            if filter_results <<< $status_checks" | jq -e 'length == 0' > /dev/null; then
+              if (( empty_result_count < 60 )); then
+                empty_result_count=$((empty_result_count+1))
+                echo "::debug::No required checks running yet"
+              else
+                echo Exiting because no required checks have started to run after a minute.
+                echo "mergable=false" >> "$GITHUB_OUTPUT"
+              fi
+            fi
           done
 
           echo Checking if pr is mergable
