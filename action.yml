@@ -64,7 +64,72 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
 
+    - name: Check if automerging
+      id: automerge
+      run: |
+          echo Sleeping for 10 seconds before checking if automerge is enabled.
+          sleep 10
+
+          echo Checking if automerge is enabled.
+          automerge=$(gh pr view $PULL --json autoMergeRequest)
+          echo "::debug::automerge=$pull_info"
+
+          if jq -e '.autoMergeRequest == null' <<< "$automerge" > /dev/null; then
+            echo Automerge is not enabled
+            echo "mergable=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo Getting list of required status checks
+          rule_sets=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/rules/branches/${{ github.base_ref }})
+          required_checks=$(jq -c <<<"$rule_sets" '[.[]| select(.type == "required_status_checks").parameters.required_status_checks[] | .context]')
+          echo "::debug::required status checks : $required_checks"
+
+          filter_results() {
+            jq <<< "$1" \
+              --argjson required "$required_checks" \
+              '[.statusCheckRollup[] | select([.name] | inside($required))]'
+          }
+          echo Waiting for status checks to complete
+          empty_result_count=0
+          status_checks=$(gh pr view $PULL --json statusCheckRollup)
+          while ! filter_results "$status_checks" | jq -e '.[] | .status == "COMPLETED"' > /dev/null
+          do
+            sleep 1
+            echo Checking status check again
+            status_checks=$(gh pr view $PULL --json statusCheckRollup)
+            echo "::debug::checks: $(jq <<<"$status_checks" -c)"
+            if filter_results "$status_checks" | jq -e 'length == 0' > /dev/null; then
+              if (( empty_result_count < 60 )); then
+                empty_result_count=$((empty_result_count+1))
+                echo "::debug::No required checks running yet"
+              else
+                echo Exiting because no required checks have started to run after a minute.
+                echo "mergable=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+          done
+
+          echo Checking if pr is mergable
+          merge_state_status=$(gh pr view $PULL --json mergeStateStatus)
+          if jq -e '[.mergeStateStatus] | inside(["CLEAN", "UNSTABLE"])' <<< "$merge_state_status" > /dev/null; then
+            echo PR will be automerged
+            echo "mergable=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo PR is unmergeable, a ticket will be created
+          echo "mergable=false" >> "$GITHUB_OUTPUT"
+      env:
+        PULL: ${{ inputs.pull-url }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      shell: bash
+
     - name: Login to jira
+      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
       uses: atlassian/gajira-login@master
       env:
         JIRA_BASE_URL: ${{ inputs.jira-url }}
@@ -72,6 +137,7 @@ runs:
         JIRA_API_TOKEN: ${{ inputs.jira-token }}
 
     - name: Set Jira Info
+      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
       id: jira-info
       env:
         summary: '${{ inputs.summary }}'
@@ -88,6 +154,7 @@ runs:
       shell: bash
 
     - name: Create issue
+      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
       id: ticket
       uses: atlassian/gajira-create@master
       with:
@@ -104,12 +171,14 @@ runs:
           }
 
     - name: Put ticket in todo
+      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
       uses: atlassian/gajira-transition@master
       with:
         issue: ${{ steps.ticket.outputs.issue }}
         transition: ${{ inputs.transition }}
 
     - name: Prepend Ticket ID to Pull Request
+      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
       run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
       env:
         PULL: ${{ inputs.pull-url }}
@@ -119,6 +188,7 @@ runs:
       shell: bash
 
     - name: Comment On Pull Request
+      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
       run: gh pr comment $PULL --body "$BODY"
       env:
         PULL: ${{ inputs.pull-url }}
@@ -128,7 +198,7 @@ runs:
       shell: bash
 
     - name: Send custom JSON data to Slack workflow
-      if: ${{ inputs.slack-webhook != '' }}
+      if: ${{ steps.automerge.outputs.mergable  == 'false' && inputs.slack-webhook != '' }}
       id: slack
       uses: slackapi/slack-github-action@v1.18.0
       with:
