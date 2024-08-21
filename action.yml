@@ -200,7 +200,7 @@ runs:
     - name: Send custom JSON data to Slack workflow
       if: ${{ steps.automerge.outputs.mergable  == 'false' && inputs.slack-webhook != '' }}
       id: slack
-      uses: slackapi/slack-github-action@v1.18.0
+      uses: slackapi/slack-github-action@v1.24.0
       with:
         payload: |
           {
