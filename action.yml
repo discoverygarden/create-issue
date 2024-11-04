@@ -177,15 +177,15 @@ runs:
         issue: ${{ steps.ticket.outputs.issue }}
         transition: ${{ inputs.transition }}
 
-    - name: Prepend Ticket ID to Pull Request
-      if: ${{ steps.automerge.outputs.mergable  == 'false' }}
-      run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
-      env:
-        PULL: ${{ inputs.pull-url }}
-        TICKET: ${{ steps.ticket.outputs.issue }}
-        OLD_TITLE: ${{ steps.pr-info.outputs.title }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      shell: bash
+    # - name: Prepend Ticket ID to Pull Request
+    #   if: ${{ steps.automerge.outputs.mergable  == 'false' }}
+    #   run: 'gh pr edit $PULL --title "$TICKET: $OLD_TITLE"'
+    #   env:
+    #     PULL: ${{ inputs.pull-url }}
+    #     TICKET: ${{ steps.ticket.outputs.issue }}
+    #     OLD_TITLE: ${{ steps.pr-info.outputs.title }}
+    #     GITHUB_TOKEN: ${{ inputs.github-token }}
+    #   shell: bash
 
     - name: Comment On Pull Request
       if: ${{ steps.automerge.outputs.mergable  == 'false' }}
