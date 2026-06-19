@@ -6,7 +6,7 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
-      "addLabels" [
+      "addLabels": [
         "{{ updateType }}"
       ],
       "automerge": true
